@@ -83,7 +83,6 @@ func getBookById(id string) (*book, error) {
 
 // Checkout
 func checkOutById(c *gin.Context) {
-	// On click decrement
 	id, ok := c.GetQuery("id")
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "missing id query parameter"})
@@ -93,7 +92,7 @@ func checkOutById(c *gin.Context) {
 
 	if book.Quantity == 0 {
 		c.JSON(http.StatusForbidden, gin.H{"message": "Book not avaiable"})
-		// os.Exit(1)
+		// os.Exit(1) // doing this will aslo stop the server instead use the return keyword
 		return
 	}
 
@@ -103,6 +102,23 @@ func checkOutById(c *gin.Context) {
 
 	book.Quantity -= 1
 	c.JSON(http.StatusOK, book)
+}
+
+func returnBook(c *gin.Context) {
+	id, ok := c.GetQuery("id")
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "missing id query parameter"})
+	}
+
+	book, err := getBookById(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"messgae": "something went wrong"})
+	}
+
+	book.Quantity += 1
+//	print(book.Quantity)
+	c.JSON(http.StatusOK, book)
+
 }
 
 func main() {
@@ -120,6 +136,9 @@ func main() {
 
 	//	Check quantity
 	router.GET("/checkout", checkOutById)
+
+	//	return quantity
+	router.GET("/return", returnBook)
 
 	// run and list server
 	router.Run("localhost:8080")
