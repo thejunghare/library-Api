@@ -19,7 +19,7 @@ type book struct {
 var books = []book{
 	{ID: "1", Title: "In search of lost time", Author: "Marcel Proust", Quantity: 2},
 	{ID: "2", Title: "The Great Gatsby", Author: "F. Scott Fitzgerald", Quantity: 5},
-	{ID: "3", Title: "War and Peace", Author: "Leo Tolstoy", Quantity: 0},
+	{ID: "3", Title: "War and Peace", Author: "Leo Tolstoy", Quantity: 10},
 }
 
 // get all the books in json format from the list
@@ -49,6 +49,7 @@ func addbooks(c *gin.Context) {
 
 } */
 
+// Check using id
 func bookById(c *gin.Context) {
 	id := c.Param("id")
 	book, err := getBookById(id)
@@ -58,12 +59,16 @@ func bookById(c *gin.Context) {
 		return
 	}
 
-	//	c.IndentedJSON(http.StatusOK, book)
-	c.IndentedJSON(http.StatusOK, book.Quantity)
+	c.IndentedJSON(http.StatusOK, book)
 
-	if book.Quantity == 0 {
+	//	Just checking somethings out about the checkout
+	/*c.IndentedJSON(http.StatusOK, book.Quantity)*/
+
+	/*if book.Quantity == 0 {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"Quantity": "Out of quantity"})
-	}
+	} else {
+		book.Quantity--
+	}*/
 }
 
 // Check if exist
@@ -76,23 +81,28 @@ func getBookById(id string) (*book, error) {
 	return nil, errors.New("book not found")
 }
 
-// Check out
+// Checkout
 func checkOutById(c *gin.Context) {
-	//	lets take id and based id lets return the quantity
-	/*id := c.Param("id")
-	book, err := getBookById(id)
-
-	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Book does not exist"})
+	// On click decrement
+	id, ok := c.GetQuery("id")
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "missing id query parameter"})
 	}
 
-	c.IndentedJSON(http.StatusOK, book.Quantity)*/
+	book, _ := getBookById(id)
 
-}
+	if book.Quantity == 0 {
+		c.JSON(http.StatusForbidden, gin.H{"message": "Book not avaiable"})
+		// os.Exit(1)
+		return
+	}
 
-func checkOutQuantity(id string) (*book, error) {
+	if book.Quantity <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Book not avaiable"})
+	}
 
-	return nil, errors.New("not found")
+	book.Quantity -= 1
+	c.JSON(http.StatusOK, book)
 }
 
 func main() {
@@ -109,7 +119,7 @@ func main() {
 	router.GET("/books/:id", bookById)
 
 	//	Check quantity
-	//	router.GET("/books/:id", checkOutById)
+	router.GET("/checkout", checkOutById)
 
 	// run and list server
 	router.Run("localhost:8080")
